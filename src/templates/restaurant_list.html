@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant List</title>
+</head>
+<body>
+    <h1>Find Your Favorite Restaurant</h1>
+    
+    <!-- Filter form -->
+    <form method="GET">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Filter</button>
+    </form>
+
+    <hr>
+
+    <!-- Displaying filtered restaurants -->
+    <h2>Restaurants</h2>
+    <ul>
+        {% for restaurant in restaurants %}
+            <li>
+                <strong>{{ restaurant.name }}</strong><br>
+                Cuisine: {{ restaurant.cuisines }}<br>
+                Rating: {{ restaurant.stars }} stars<br>
+                City: {{ restaurant.city }}<br>
+                Price Range: {{ restaurant.price_range }}<br>
+                Offers Delivery: {% if restaurant.delivery %}Yes{% else %}No{% endif %}<br>
+            </li>
+        {% empty %}
+            <p>No restaurants match your criteria.</p>
+        {% endfor %}
+    </ul>
+</body>
+</html>
