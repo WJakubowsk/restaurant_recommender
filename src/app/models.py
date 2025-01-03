@@ -28,18 +28,10 @@ class Restaurant(models.Model):
     credit_cards_accepted = models.BooleanField(null=True, blank=True)
     price_range = models.IntegerField(null=True, blank=True)
     attire = models.CharField(max_length=50, null=True, blank=True)
-    alcohol = models.CharField(
-        max_length=50,
-        choices=[
-            ("none", "None"),
-            ("beer_wine", "Beer & Wine"),
-            ("full_bar", "Full Bar"),
-        ],
-        null=True,
-        blank=True,
-    )
+    alcohol = models.BooleanField(null=True, blank=True)
     happy_hour = models.BooleanField(null=True, blank=True)
     dogs_allowed = models.BooleanField(null=True, blank=True)
+    sustainable = models.BooleanField(null=True, blank=True)
 
     # Cuisine & ambience categories (Many-to-Many Relationship)
     cuisines = models.ManyToManyField("Cuisine", related_name="restaurants", blank=True)

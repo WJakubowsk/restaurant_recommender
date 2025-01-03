@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from .models import Restaurant
 from .forms import RestaurantFilterForm
 from django.contrib.auth.decorators import login_required
+from datetime import datetime
 
 
 class HomeAPIView(APIView):
@@ -26,6 +27,7 @@ def home(request):
             name = form.cleaned_data.get("name")
             cuisine = form.cleaned_data.get("cuisine")
             min_rating = form.cleaned_data.get("min_rating")
+            open_now = form.cleaned_data.get("open_now")
             city = form.cleaned_data.get("city")
             price_range = form.cleaned_data.get("price_range")
             delivery = form.cleaned_data.get("delivery")
@@ -39,6 +41,7 @@ def home(request):
             credit_cards_accepted = form.cleaned_data.get("credit_cards_accepted")
             happy_hour = form.cleaned_data.get("happy_hour")
             dogs_allowed = form.cleaned_data.get("dogs_allowed")
+            sustainable = form.cleaned_data.get("sustainable")
 
             # Apply filters
             if name:
@@ -47,6 +50,22 @@ def home(request):
                 restaurants = restaurants.filter(cuisine__icontains=cuisine)
             if min_rating is not None:
                 restaurants = restaurants.filter(rating__gte=min_rating)
+            if open_now:
+                # Determine current day and time
+                now = datetime.now()
+                current_day = now.strftime("%A").lower()  # e.g., "monday", "tuesday"
+                current_time = now.time()
+
+                # Dynamically filter based on opening and closing times
+                open_field = f"{current_day}_open"
+                close_field = f"{current_day}_close"
+
+                restaurants = restaurants.filter(
+                    **{
+                        f"{open_field}__lte": current_time,  # Open before or at the current time
+                        f"{close_field}__gte": current_time,  # Close after or at the current time
+                    }
+                )
             if city:
                 restaurants = restaurants.filter(city__icontains=city)
             if price_range:
@@ -77,6 +96,8 @@ def home(request):
                 restaurants = restaurants.filter(happy_hour=happy_hour)
             if dogs_allowed is not None:
                 restaurants = restaurants.filter(dogs_allowed=dogs_allowed)
+            if sustainable is not None:
+                restaurants = restaurants.filter(sustainable=sustainable)
     else:
         form = RestaurantFilterForm()
 

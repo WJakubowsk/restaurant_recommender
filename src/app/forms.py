@@ -13,6 +13,9 @@ class RestaurantFilterForm(forms.Form):
     # Filter by cuisine
     cuisine = forms.ModelChoiceField(queryset=Cuisine.objects.all(), required=False)
 
+    # filter for opening hours
+    open_now = forms.BooleanField(required=False, label="Open Now")
+
     # Filter by rating (1 to 5 with 0.5 increments)
     min_rating = forms.DecimalField(
         required=False,
@@ -50,4 +53,7 @@ class RestaurantFilterForm(forms.Form):
     dogs_allowed = forms.BooleanField(required=False, label="Dogs Allowed")
     delivery = forms.BooleanField(
         required=False, label="Offers Delivery", initial=False
+    )
+    sustainable = forms.BooleanField(
+        required=False, label="Feeling sustainable", initial=False
     )
