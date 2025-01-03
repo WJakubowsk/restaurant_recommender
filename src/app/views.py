@@ -21,6 +21,7 @@ def home(request):
 
         if form.is_valid():
             # Get the filter values from the form
+            name = form.cleaned_data.get("name")
             cuisine = form.cleaned_data.get("cuisine")
             min_rating = form.cleaned_data.get("min_rating")
             city = form.cleaned_data.get("city")
@@ -38,6 +39,8 @@ def home(request):
             dogs_allowed = form.cleaned_data.get("dogs_allowed")
 
             # Apply filters
+            if name:
+                restaurants = restaurants.filter(name__icontains=name)
             if cuisine:
                 restaurants = restaurants.filter(cuisine__icontains=cuisine)
             if min_rating is not None:

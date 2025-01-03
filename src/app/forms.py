@@ -3,6 +3,13 @@ from .models import Restaurant, Cuisine
 
 
 class RestaurantFilterForm(forms.Form):
+    # Filter by name (search bar)
+    name = forms.CharField(
+        required=False,
+        max_length=100,
+        label="Restaurant name",
+        widget=forms.TextInput(attrs={"placeholder": "Search by name"}),
+    )
     # Filter by cuisine
     cuisine = forms.ModelChoiceField(queryset=Cuisine.objects.all(), required=False)
 
