@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Restaurant
 from .forms import RestaurantFilterForm
+from django.contrib.auth.decorators import login_required
 
 
 class HomeAPIView(APIView):
@@ -11,6 +12,7 @@ class HomeAPIView(APIView):
         return Response({"message": "Welcome to the Restaurant Recommender!"})
 
 
+# @login_required
 def home(request):
     # Default queryset (all restaurants)
     restaurants = Restaurant.objects.all()
@@ -44,7 +46,7 @@ def home(request):
             if cuisine:
                 restaurants = restaurants.filter(cuisine__icontains=cuisine)
             if min_rating is not None:
-                restaurants = restaurants.filter(stars__gte=min_rating)
+                restaurants = restaurants.filter(rating__gte=min_rating)
             if city:
                 restaurants = restaurants.filter(city__icontains=city)
             if price_range:

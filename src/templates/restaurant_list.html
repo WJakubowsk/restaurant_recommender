@@ -4,9 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restaurant List</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map {
+            height: 500px; /* Adjust the height as needed */
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-    <h1>Find Your Favorite Restaurant</h1>
+    <h1>Intelligent Restaurant Recommender System</h1>
+
+    <nav>
+        <ul>
+            {% if user.is_authenticated %}
+                <li>Welcome, {{ user.username }}</li>
+                <!-- <li><a href="{% url 'logout' %}">Logout</a></li> -->
+                <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+            {% else %}
+                <li><a href="{% url 'login' %}">Login</a></li>
+                <li><a href="{% url 'signup' %}">Sign Up</a></li>
+            {% endif %}
+        </ul>
+    </nav>
     
     <!-- Filter form -->
     <form method="GET">
@@ -33,5 +57,43 @@
             <p>No restaurants match your criteria.</p>
         {% endfor %}
     </ul>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <script>
+        const restaurants = [
+            {% for restaurant in restaurants %}
+            {
+                name: "{{ restaurant.name|escapejs }}",
+                latitude: {{ restaurant.latitude }},
+                longitude: {{ restaurant.longitude }},
+                city: "{{ restaurant.city|escapejs }}"
+            },
+            {% endfor %}
+        ];
+
+        // Initialize the map
+        const map = L.map('map').setView([0, 0], 2); // Default view (latitude, longitude, zoom level)
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add markers for each restaurant
+        restaurants.forEach(restaurant => {
+            if (restaurant.latitude && restaurant.longitude) {
+                const marker = L.marker([restaurant.latitude, restaurant.longitude]).addTo(map);
+                marker.bindPopup(`<b>${restaurant.name}</b><br>${restaurant.city}`);
+            }
+        });
+
+        // Adjust the map view to fit all markers
+        const bounds = L.latLngBounds(restaurants.map(r => [r.latitude, r.longitude]));
+        if (bounds.isValid()) {
+            map.fitBounds(bounds);
+        }
+    </script>
 </body>
 </html>
