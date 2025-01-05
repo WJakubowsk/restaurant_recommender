@@ -12,7 +12,7 @@ class Restaurant(models.Model):
     postal_code = models.CharField(max_length=20, null=True, blank=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
-    is_open = models.BooleanField(default=True)
+    # is_open = models.BooleanField(default=True)
     review_count = models.IntegerField(default=0)
     rating = models.FloatField(default=0.0)
 
@@ -27,7 +27,7 @@ class Restaurant(models.Model):
     bike_parking = models.BooleanField(null=True, blank=True)
     credit_cards_accepted = models.BooleanField(null=True, blank=True)
     price_range = models.IntegerField(null=True, blank=True)
-    attire = models.CharField(max_length=50, null=True, blank=True)
+    # attire = models.CharField(max_length=50, null=True, blank=True)
     alcohol = models.BooleanField(null=True, blank=True)
     happy_hour = models.BooleanField(null=True, blank=True)
     dogs_allowed = models.BooleanField(null=True, blank=True)
