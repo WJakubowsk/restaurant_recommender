@@ -1,5 +1,5 @@
 from django import forms
-from .models import Restaurant, Cuisine
+from .models import Restaurant, Cuisine, Ambience
 
 
 class RestaurantFilterForm(forms.Form):
@@ -10,8 +10,9 @@ class RestaurantFilterForm(forms.Form):
         label="Restaurant name",
         widget=forms.TextInput(attrs={"placeholder": "Search by name"}),
     )
-    # Filter by cuisine
+    # Filter by cuisine and ambience
     cuisine = forms.ModelChoiceField(queryset=Cuisine.objects.all(), required=False)
+    ambience = forms.ModelChoiceField(queryset=Ambience.objects.all(), required=False)
 
     # filter for opening hours
     open_now = forms.BooleanField(required=False, label="Open Now")

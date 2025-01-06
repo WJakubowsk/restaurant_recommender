@@ -26,6 +26,7 @@ def home(request):
             # Get the filter values from the form
             name = form.cleaned_data.get("name")
             cuisine = form.cleaned_data.get("cuisine")
+            ambience = form.cleaned_data.get("ambience")
             min_rating = form.cleaned_data.get("min_rating")
             open_now = form.cleaned_data.get("open_now")
             city = form.cleaned_data.get("city")
@@ -47,7 +48,9 @@ def home(request):
             if name:
                 restaurants = restaurants.filter(name__icontains=name)
             if cuisine:
-                restaurants = restaurants.filter(cuisine__icontains=cuisine)
+                restaurants = restaurants.filter(cuisines__name__icontains=cuisine)
+            if ambience:
+                restaurants = restaurants.filter(ambiences__name__icontains=ambience)
             if min_rating is not None:
                 restaurants = restaurants.filter(rating__gte=min_rating)
             if open_now:

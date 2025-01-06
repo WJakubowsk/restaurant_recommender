@@ -260,6 +260,16 @@ class Command(BaseCommand):
                         if name.strip() in ambience_cols and row.get(name) == "1"
                     ]
 
+                    # Define sustainable categories
+                    sustainable_cuisines = [
+                        "Vegan",
+                        "Vegetarian",
+                        "Organic Stores",
+                        "Ethical Grocery",
+                        "Local Flavor",
+                        "Ethnic Grocery",
+                    ]
+
                     # Parse time fields
                     def parse_time(time_str):
                         if time_str:
@@ -309,28 +319,32 @@ class Command(BaseCommand):
                         ),
                         price_range=(
                             int(row["attributes.RestaurantsPriceRange2"])
-                            if row.get("price_range")
+                            if row.get("attributes.RestaurantsPriceRange2")
                             else None
                         ),
                         alcohol=parse_boolean(row.get("attributes.Alcohol")),
                         happy_hour=parse_boolean(row.get("attributes.HappyHour")),
                         dogs_allowed=parse_boolean(row.get("attributes.DogsAllowed")),
-                        sustainable=parse_boolean(row.get("sustainable")),
+                        sustainable=any(
+                            cuisine in sustainable_cuisines for cuisine in cuisines
+                        ),
                         parking=parse_boolean(row.get("attributes.BusinessParking")),
-                        monday_open=parse_time(row.get("monday_open")),
-                        monday_close=parse_time(row.get("monday_close")),
-                        tuesday_open=parse_time(row.get("tuesday_open")),
-                        tuesday_close=parse_time(row.get("tuesday_close")),
-                        wednesday_open=parse_time(row.get("wednesday_open")),
-                        wednesday_close=parse_time(row.get("wednesday_close")),
-                        thursday_open=parse_time(row.get("thursday_open")),
-                        thursday_close=parse_time(row.get("thursday_close")),
-                        friday_open=parse_time(row.get("friday_open")),
-                        friday_close=parse_time(row.get("friday_close")),
-                        saturday_open=parse_time(row.get("saturday_open")),
-                        saturday_close=parse_time(row.get("saturday_close")),
-                        sunday_open=parse_time(row.get("sunday_open")),
-                        sunday_close=parse_time(row.get("sunday_close")),
+                        monday_open=parse_time(row.get("hours.Monday_open_time")),
+                        monday_close=parse_time(row.get("hours.Monday_close_time")),
+                        tuesday_open=parse_time(row.get("hours.Tuesday_open_time")),
+                        tuesday_close=parse_time(row.get("hours.Tuesday_close_time")),
+                        wednesday_open=parse_time(row.get("hours.Wednesday_open_time")),
+                        wednesday_close=parse_time(
+                            row.get("hours.Wednesday_close_time")
+                        ),
+                        thursday_open=parse_time(row.get("hours.Thursday_open_time")),
+                        thursday_close=parse_time(row.get("hours.Thursday_close_time")),
+                        friday_open=parse_time(row.get("hours.Friday_open_time")),
+                        friday_close=parse_time(row.get("hours.Friday_close_time")),
+                        saturday_open=parse_time(row.get("hours.Saturday_open_time")),
+                        saturday_close=parse_time(row.get("hours.Saturday_close_time")),
+                        sunday_open=parse_time(row.get("hours.Sunday_open_time")),
+                        sunday_close=parse_time(row.get("hours.Sunday_close_time")),
                     )
                     restaurant.save()
 

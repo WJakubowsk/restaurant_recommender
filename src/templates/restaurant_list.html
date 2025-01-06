@@ -48,7 +48,7 @@
             <li>
                 <strong>{{ restaurant.name }}</strong><br>
                 Cuisine: {{ restaurant.cuisines }}<br>
-                Rating: {{ restaurant.stars }} stars<br>
+                Rating: {{ restaurant.rating }} stars<br>
                 City: {{ restaurant.city }}<br>
                 Price Range: {{ restaurant.price_range }}<br>
                 Offers Delivery: {% if restaurant.delivery %}Yes{% else %}No{% endif %}<br>
@@ -68,7 +68,10 @@
                 name: "{{ restaurant.name|escapejs }}",
                 latitude: {{ restaurant.latitude }},
                 longitude: {{ restaurant.longitude }},
-                city: "{{ restaurant.city|escapejs }}"
+                city: "{{ restaurant.city|escapejs }}",
+                rating: "{{ restaurant.rating }} stars",
+                review_count: "{{ restaurant.review_count }} reviews",
+
             },
             {% endfor %}
         ];
@@ -85,7 +88,7 @@
         restaurants.forEach(restaurant => {
             if (restaurant.latitude && restaurant.longitude) {
                 const marker = L.marker([restaurant.latitude, restaurant.longitude]).addTo(map);
-                marker.bindPopup(`<b>${restaurant.name}</b><br>${restaurant.city}`);
+                marker.bindPopup(`<b>${restaurant.name}</b><br>${restaurant.city}<br>${restaurant.rating}<br>${restaurant.review_count}`);
             }
         });
 
