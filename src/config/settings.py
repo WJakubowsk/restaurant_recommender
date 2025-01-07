@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "rest_framework",  # for REACT frontend
     "authentication",  # for user authentication
     "corsheaders",
+    "rest_framework.authtoken",  
 ]
 
 

@@ -1,121 +1,188 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Login = ({ onLogin }) => {
+  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("User logged in");
-    onLogin();
-    navigate("/");
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/login/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("token", data.token); // Save token for authenticated requests
+        onLogin(); // Trigger login state in parent
+        navigate("/"); // Redirect to home or another page
+      } else {
+        const data = await response.json();
+        setError(data.error || "Login failed");
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    }
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.formContainer}>
-        <h1 style={styles.title}>Welcome Back</h1>
-        <p style={styles.subtitle}>Log in to access the best restaurants</p>
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <label style={styles.label}>
-            Username:
-            <input type="text" name="username" required style={styles.input} />
-          </label>
-          <label style={styles.label}>
-            Password:
-            <input type="password" name="password" required style={styles.input} />
-          </label>
-          <button type="submit" style={styles.button}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #e0f7fa, #81d4fa)",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <div
+        style={{
+          background: "white",
+          padding: "30px 40px",
+          borderRadius: "10px",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+          width: "100%",
+          maxWidth: "400px",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "24px",
+            marginBottom: "20px",
+            textAlign: "center",
+            color: "#0277bd",
+          }}
+        >
+          Login
+        </h1>
+        {error && (
+          <p
+            style={{
+              color: "red",
+              fontSize: "14px",
+              marginBottom: "15px",
+              textAlign: "center",
+            }}
+          >
+            {error}
+          </p>
+        )}
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: "15px" }}>
+            <label
+              htmlFor="username"
+              style={{
+                display: "block",
+                fontWeight: "bold",
+                marginBottom: "5px",
+                color: "#01579b",
+              }}
+            >
+              Username
+            </label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+              style={{
+                width: "100%",
+                padding: "10px",
+                border: "1px solid #81d4fa",
+                borderRadius: "5px",
+                fontSize: "14px",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: "15px" }}>
+            <label
+              htmlFor="password"
+              style={{
+                display: "block",
+                fontWeight: "bold",
+                marginBottom: "5px",
+                color: "#01579b",
+              }}
+            >
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              style={{
+                width: "100%",
+                padding: "10px",
+                border: "1px solid #81d4fa",
+                borderRadius: "5px",
+                fontSize: "14px",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            style={{
+              width: "100%",
+              padding: "10px",
+              backgroundColor: "#0277bd",
+              color: "white",
+              fontSize: "16px",
+              fontWeight: "bold",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              transition: "background-color 0.3s",
+            }}
+            onMouseOver={(e) =>
+              (e.target.style.backgroundColor = "#01579b")
+            }
+            onMouseOut={(e) =>
+              (e.target.style.backgroundColor = "#0277bd")
+            }
+          >
             Login
           </button>
         </form>
-        <p style={styles.footerText}>
-          Don't have an account?{" "}
-          <a href="/signup" style={styles.link}>
+        <p
+          style={{
+            marginTop: "15px",
+            textAlign: "center",
+            fontSize: "14px",
+          }}
+        >
+          Don't have an account? 
+          <span
+            style={{ color: "#0277bd", cursor: "pointer", fontWeight: "bold" }}
+            onClick={() => navigate("/signup")}
+          >
             Sign up here
-          </a>.
+          </span>
         </p>
       </div>
     </div>
   );
-};
-
-const styles = {
-  container: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: "100vh",
-    backgroundColor: "#e0f7fa", // Light blue background
-    margin: 0,
-  },
-  formContainer: {
-    backgroundColor: "#ffffff", // White form background
-    padding: "2rem",
-    borderRadius: "8px",
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-    width: "90%",
-    maxWidth: "400px",
-    textAlign: "center",
-  },
-  title: {
-    fontSize: "2rem",
-    color: "#0277bd", // Deep blue color
-    margin: "0 0 0.5rem",
-  },
-  subtitle: {
-    fontSize: "1rem",
-    color: "#01579b", // Slightly darker blue
-    marginBottom: "1.5rem",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-  },
-  label: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    fontSize: "1rem",
-    color: "#01579b",
-    fontWeight: "bold",
-  },
-  input: {
-    width: "100%",
-    padding: "0.5rem",
-    fontSize: "1rem",
-    borderRadius: "4px",
-    border: "1px solid #81d4fa", // Light blue border
-    outline: "none",
-    marginTop: "0.25rem",
-  },
-  inputFocus: {
-    borderColor: "#0277bd", // Focused border
-  },
-  button: {
-    padding: "0.75rem",
-    fontSize: "1rem",
-    color: "#ffffff",
-    backgroundColor: "#0288d1", // Primary blue
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    transition: "background-color 0.3s",
-  },
-  buttonHover: {
-    backgroundColor: "#01579b", // Darker blue on hover
-  },
-  footerText: {
-    fontSize: "0.9rem",
-    color: "#01579b",
-    marginTop: "1rem",
-  },
-  link: {
-    color: "#0288d1",
-    textDecoration: "none",
-    fontWeight: "bold",
-  },
 };
 
 export default Login;
