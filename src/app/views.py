@@ -6,11 +6,26 @@ from .models import Restaurant
 from .forms import RestaurantFilterForm
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
+from django.http import JsonResponse
+from django.forms.models import model_to_dict
 
 
 class HomeAPIView(APIView):
     def get(self, request):
         return Response({"message": "Welcome to the Restaurant Recommender!"})
+
+from django.http import JsonResponse
+from .models import Cuisine
+
+def cuisine_list(request):
+    cuisines = Cuisine.objects.all().values("id", "name")  # Return id and name
+    return JsonResponse(list(cuisines), safe=False)
+
+from .models import Ambience
+
+def ambience_list(request):
+    ambiences = Ambience.objects.all().values("id", "name")  # Return id and name
+    return JsonResponse(list(ambiences), safe=False)
 
 
 # @login_required
@@ -44,13 +59,21 @@ def home(request):
             dogs_allowed = form.cleaned_data.get("dogs_allowed")
             sustainable = form.cleaned_data.get("sustainable")
 
+            
+
             # Apply filters
             if name:
                 restaurants = restaurants.filter(name__icontains=name)
+         
             if cuisine:
-                restaurants = restaurants.filter(cuisines__name__icontains=cuisine)
+    # `cuisine` is a Cuisine instance because of ModelChoiceField
+                 restaurants = restaurants.filter(cuisines__id=cuisine.id)
+
             if ambience:
-                restaurants = restaurants.filter(ambiences__name__icontains=ambience)
+                # Ambience is received as an ID, filter by it
+                restaurants = restaurants.filter(ambiences__id=ambience.id)
+
+
             if min_rating is not None:
                 restaurants = restaurants.filter(rating__gte=min_rating)
             if open_now:
@@ -72,12 +95,13 @@ def home(request):
             if city:
                 restaurants = restaurants.filter(city__icontains=city)
             if price_range:
-                restaurants = restaurants.filter(price_range=price_range)
+                 restaurants = restaurants.filter(price_range=int(price_range))
+
             if delivery is not None:
                 restaurants = restaurants.filter(delivery=delivery)
             if good_for_kids is not None:
                 restaurants = restaurants.filter(good_for_kids=good_for_kids)
-            if good_for_groups is not None:
+            if good_for_groups is not None :
                 restaurants = restaurants.filter(good_for_groups=good_for_groups)
             if take_out is not None:
                 restaurants = restaurants.filter(take_out=take_out)
@@ -101,10 +125,40 @@ def home(request):
                 restaurants = restaurants.filter(dogs_allowed=dogs_allowed)
             if sustainable is not None:
                 restaurants = restaurants.filter(sustainable=sustainable)
+            
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                restaurant_data = [
+                    {
+                        "name": restaurant.name,
+                        "cuisine": [c.name for c in restaurant.cuisines.all()],  # Extract related field
+                        "ambience": [a.name for a in restaurant.ambiences.all()],
+                        "rating": restaurant.rating,
+                        "city": restaurant.city,
+                        "price_range": restaurant.price_range,
+                        "delivery": restaurant.delivery,
+                        "good_for_kids": restaurant.good_for_kids,
+                        "good_for_groups": restaurant.good_for_groups,
+                        "take_out": restaurant.take_out,
+                        "reservations": restaurant.reservations,
+                        "outdoor_seating": restaurant.outdoor_seating,
+                        "wheelchair_accessible": restaurant.wheelchair_accessible,
+                        "bike_parking": restaurant.bike_parking,
+                        "credit_cards_accepted": restaurant.credit_cards_accepted,
+                        "happy_hour": restaurant.happy_hour,
+                        "dogs_allowed": restaurant.dogs_allowed,
+                        "sustainable": restaurant.sustainable,
+                        "latitude": restaurant.latitude,
+                        "longitude": restaurant.longitude,
+                    }
+                    for restaurant in restaurants
+                ]
+                return JsonResponse({"restaurants": restaurant_data}, safe=False)
     else:
         form = RestaurantFilterForm()
 
+    print(form.errors)
     # Render the template with the filtered restaurants and the form
     return render(
         request, "restaurant_list.html", {"form": form, "restaurants": restaurants}
     )
+

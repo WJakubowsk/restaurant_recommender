@@ -48,11 +48,25 @@
         {% for restaurant in restaurants %}
             <li>
                 <strong>{{ restaurant.name }}</strong><br>
-                Cuisine: {{ restaurant.cuisines }}<br>
+                Cuisine: {{ restaurant.cuisine }}<br>
+                Ambience: {{ restaurant.ambience }}<br>
                 Rating: {{ restaurant.rating }} stars<br>
                 City: {{ restaurant.city }}<br>
                 Price Range: {{ restaurant.price_range }}<br>
                 Offers Delivery: {% if restaurant.delivery %}Yes{% else %}No{% endif %}<br>
+                Good for Kids: {% if restaurant.good_for_kids %}Yes{% else %}No{% endif %}<br>
+                Good for Groups: {% if restaurant.good_for_groups %}Yes{% else %}No{% endif %}<br>
+                Take Out: {% if restaurant.take_out %}Yes{% else %}No{% endif %}<br>
+                Reservations: {% if restaurant.reservations %}Yes{% else %}No{% endif %}<br>
+                Outdoor Seating: {% if restaurant.outdoor_seating %}Yes{% else %}No{% endif %}<br>
+                Wheelchair Accessible: {% if restaurant.wheelchair_accessible %}Yes{% else %}No{% endif %}<br>
+                Bike Parking: {% if restaurant.bike_parking %}Yes{% else %}No{% endif %}<br>
+                Credit Cards Accepted: {% if restaurant.credit_cards_accepted %}Yes{% else %}No{% endif %}<br>
+                Happy Hour: {% if restaurant.happy_hour %}Yes{% else %}No{% endif %}<br>
+                Dogs Allowed: {% if restaurant.dogs_allowed %}Yes{% else %}No{% endif %}<br>
+                Sustainable: {% if restaurant.sustainable %}Yes{% else %}No{% endif %}<br>
+                Latitude: {{ restaurant.latitude }}<br>
+                Longitude: {{ restaurant.longitude }}<br>
             </li>
         {% empty %}
             <p>No restaurants match your criteria.</p>
@@ -61,6 +75,7 @@
 
     <!-- Map Container -->
     <div id="map"></div>
+
 
     <script>
         const restaurants = [
