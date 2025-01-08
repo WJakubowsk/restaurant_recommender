@@ -166,7 +166,15 @@ def home(request):
                 restaurants = restaurants.filter(dogs_allowed=dogs_allowed)
             if sustainable is not None:
                 restaurants = restaurants.filter(sustainable=sustainable)
+            now = datetime.now()
+            current_day = now.strftime("%A").lower()  # e.g., "monday", "tuesday"
+            current_time = now.time()
+
+                # Dynamically filter based on opening and closing times
+            open_field = f"{current_day}_open"
+            close_field = f"{current_day}_close"
             
+
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 restaurant_data = [
                     {
@@ -190,6 +198,20 @@ def home(request):
                         "sustainable": restaurant.sustainable,
                         "latitude": restaurant.latitude,
                         "longitude": restaurant.longitude,
+                         "monday_open": restaurant.monday_open,
+                        "monday_close": restaurant.monday_close,
+                        "tuesday_open": restaurant.tuesday_open,
+                        "tuesday_close": restaurant.tuesday_close,
+                        "wednesday_open": restaurant.wednesday_open,
+                        "wednesday_close": restaurant.wednesday_close,
+                        "thursday_open": restaurant.thursday_open,
+                        "thursday_close": restaurant.thursday_close,
+                        "friday_open": restaurant.friday_open,
+                        "friday_close": restaurant.friday_close,
+                        "saturday_open": restaurant.saturday_open,
+                        "saturday_close": restaurant.saturday_close,
+                        "sunday_open": restaurant.sunday_open,
+                        "sunday_close": restaurant.sunday_close,
                     }
                     for restaurant in restaurants
                 ]

@@ -41,6 +41,7 @@ const Login = ({ onLogin }) => {
     <div
       style={{
         display: "flex",
+        flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
@@ -48,6 +49,20 @@ const Login = ({ onLogin }) => {
         fontFamily: "Arial, sans-serif",
       }}
     >
+      {/* Large header text */}
+      <h1
+        style={{
+          fontSize: "48px",
+          color: "#0277bd",
+          marginBottom: "30px",
+          textAlign: "center",
+          fontWeight: "bold",
+        }}
+      >
+        Restaurant Recommender
+      </h1>
+
+      {/* Login panel */}
       <div
         style={{
           background: "white",
@@ -58,7 +73,7 @@ const Login = ({ onLogin }) => {
           maxWidth: "400px",
         }}
       >
-        <h1
+        <h2
           style={{
             fontSize: "24px",
             marginBottom: "20px",
@@ -67,7 +82,7 @@ const Login = ({ onLogin }) => {
           }}
         >
           Login
-        </h1>
+        </h2>
         {error && (
           <p
             style={{
@@ -172,7 +187,7 @@ const Login = ({ onLogin }) => {
             fontSize: "14px",
           }}
         >
-          Don't have an account? 
+          Don't have an account?{" "}
           <span
             style={{ color: "#0277bd", cursor: "pointer", fontWeight: "bold" }}
             onClick={() => navigate("/signup")}
@@ -186,3 +201,4 @@ const Login = ({ onLogin }) => {
 };
 
 export default Login;
+

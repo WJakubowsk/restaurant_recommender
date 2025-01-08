@@ -5,6 +5,8 @@ import L from "leaflet";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerIconRetina from "leaflet/dist/images/marker-icon-2x.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import { useNavigate } from "react-router-dom";
+
 // Fix Leaflet's default icon issue in React
 delete L.Icon.Default.prototype._getIconUrl;
 
@@ -73,9 +75,37 @@ const formatPriceRange = (priceRange) => {
   return symbols[priceRange] || "Unknown";
 };
 
+const getAllOpenHours = (restaurant) => {
+  const daysOfWeek = [
+    { key: "sunday", label: "Sunday" },
+    { key: "monday", label: "Monday" },
+    { key: "tuesday", label: "Tuesday" },
+    { key: "wednesday", label: "Wednesday" },
+    { key: "thursday", label: "Thursday" },
+    { key: "friday", label: "Friday" },
+    { key: "saturday", label: "Saturday" },
+  ];
+
+  return daysOfWeek.map(({ key, label }) => {
+    const openKey = `${key}_open`;
+    const closeKey = `${key}_close`;
+
+    if (restaurant[openKey] && restaurant[closeKey]) {
+      // Extract the hour from the time string (e.g., "09:00:00" -> "9")
+      const formatHour = (time) => parseInt(time.split(":")[0], 10);
+      const openHour = formatHour(restaurant[openKey]);
+      const closeHour = formatHour(restaurant[closeKey]);
+      return `${label}: ${openHour}-${closeHour}`;
+    } else {
+      return `${label}: Closed`;
+    }
+  });
+};
 
 
 const RestaurantList = () => {
+  const navigate = useNavigate();
+  const [restaurantCount, setRestaurantCount] = useState(0); 
   const [restaurants, setRestaurants] = useState([]);
   const [cuisines, setCuisines] = useState([]);
   const [ambiences, setAmbiences] = useState([]);
@@ -152,10 +182,12 @@ const RestaurantList = () => {
 
         const data = await response.json();
         setRestaurants(data.restaurants);
+        setRestaurantCount(data.restaurants.length);
     } catch (error) {
         console.error("Error fetching restaurants:", error);
     }
 };
+
 
 
   const handleFilterSubmit = (e) => {
@@ -171,6 +203,10 @@ const RestaurantList = () => {
     }));
   };
   
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // Clear token from storage
+    navigate("/login"); // Redirect to login page
+  };
   
 
   const handleRowClick = (restaurant) => {
@@ -187,8 +223,48 @@ const RestaurantList = () => {
     return null;
   };
 
+  const getTodayOpenHours = (restaurant) => {
+    const daysOfWeek = [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ];
+    const today = new Date().getDay(); // Get today's day (0 = Sunday, 6 = Saturday)
+    const day = daysOfWeek[today]; // Map to day name
+    const openKey = `${day}_open`;
+    const closeKey = `${day}_close`;
+    if (restaurant[openKey] && restaurant[closeKey]) {
+      // Extract the hour from the time string (e.g., "09:00:00" -> "9")
+      const formatHour = (time) => parseInt(time.split(":")[0], 10);
+      const openHour = formatHour(restaurant[openKey]);
+      const closeHour = formatHour(restaurant[closeKey]);
+  
+      return `${openHour}-${closeHour}`;
+    } else {
+      return "Closed";
+    }
+  };
+
   return (
+    <div>
+    {/* Logout Bar */}
+    <div style={styles.logoutBar}>
+      <span style={{ fontSize: "1rem", fontWeight: "bold" }}>Restaurant Recommender</span>
+      <button 
+        style={styles.logoutButton} 
+        onClick={handleLogout}
+        onMouseOver={(e) => e.target.style.backgroundColor = "#01579b"}
+        onMouseOut={(e) => e.target.style.backgroundColor = "#ffffff"}
+      >
+        Logout
+      </button>
+    </div>
     <div style={styles.container}>
+     
     {/* Sidebar */}
     {isSidebarVisible && (
       <div style={styles.sidebar}>
@@ -320,6 +396,35 @@ const RestaurantList = () => {
           <button type="submit" style={styles.button}>
             Apply Filters
           </button>
+          <button
+    type="button"
+    onClick={() =>
+      setFilters({
+        name: "",
+        cuisine: "",
+        ambience: "",
+        min_rating: "",
+        city: "",
+        price_range: "",
+        open_now: "",
+        delivery: "",
+        good_for_kids: "",
+        good_for_groups: "",
+        take_out: "",
+        reservations: "",
+        outdoor_seating: "",
+        wheelchair_accessible: "",
+        bike_parking: "",
+        credit_cards_accepted: "",
+        happy_hour: "",
+        dogs_allowed: "",
+        sustainable: "",
+      })
+    }
+    style={{ ...styles.button, backgroundColor: "#e57373" }}
+  >
+    Clear Filters
+  </button>
         </form>
       </div>
     )}
@@ -352,7 +457,12 @@ const RestaurantList = () => {
           {/* Results Table */}
           {showTable && (
             <div style={styles.tableContainer}>
-              <h2 style={styles.tableTitle}>Restaurants</h2>
+              <div style={styles.resultsHeader}>
+                <h2 style={styles.tableTitle}>Restaurants</h2>
+                <span style={styles.resultsCount}>
+                  {restaurantCount} {restaurantCount === 1 ? "result" : "results"}
+                </span>
+              </div>
               <table style={styles.table}>
                 <thead>
                   <tr>
@@ -361,6 +471,7 @@ const RestaurantList = () => {
                     <th style={styles.th}>City</th>
                     <th style={styles.th}>Rating</th>
                     <th style={styles.th}>Price Range</th>
+                    <th style={styles.th}>Today's Hours</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -370,15 +481,17 @@ const RestaurantList = () => {
                       <td style={styles.td}>{restaurant.cuisine.join(", ")}</td>
                       <td style={styles.td}>{restaurant.city}</td>
                       <td style={styles.tdCentered}>{restaurant.rating}</td>
-                      <td style={styles.tdCentered}>{formatPriceRange(restaurant.price_range)}</td>
+                      <td style={styles.tdCentered}>
+                        {formatPriceRange(restaurant.price_range)}
+                      </td>
+                      <td style={styles.tdCentered}>{getTodayOpenHours(restaurant)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-
             </div>
           )}
-
+       
           {/* Map */}
           {showMap && (
             <div style={styles.mapContainer}>
@@ -441,6 +554,14 @@ const RestaurantList = () => {
                           <b>Dogs Allowed:</b> {restaurant.dogs_allowed ? "Yes" : "No"}
                           <br />
                           <b>Sustainable:</b> {restaurant.sustainable ? "Yes" : "No"}
+                          <br />
+                          <br />
+                          <b>Opening Hours:</b>
+                          <ul>
+                            {getAllOpenHours(restaurant).map((hours, idx) => (
+                              <li key={idx}>{hours}</li>
+                            ))}
+                          </ul>
                         
                       </Popup>
 
@@ -454,6 +575,7 @@ const RestaurantList = () => {
         </div>
       )}
     </div>
+  </div>
   </div>
 );
 };
@@ -541,7 +663,7 @@ results: {
   height: "calc(100vh - 2rem)", // Adjust height to account for the top bar
 },
 tableContainer: {
-  flex: 1,
+  flex: 2.5, // Increase the space allocated to the table
   overflowX: "auto",
 },
 tableTitle: {
@@ -564,7 +686,7 @@ td: {
   borderBottom: "1px solid #ddd",
 },
 mapContainer: {
-  flex: 1,
+  flex: 2, // Reduce the space allocated to the map
   height: "100%",
   borderRadius: "8px",
   overflow: "hidden",
@@ -590,6 +712,45 @@ tdCentered: {
   border: "1px solid #ddd",
   textAlign: "center", // Center the content for specific cells
 },
+logoutBar: {
+  display: "flex",
+  justifyContent: "space-between", // Distributes items to the edges
+  alignItems: "center",
+  backgroundColor: "#0288d1",
+  color: "#ffffff",
+  padding: "0.75rem 1rem",
+  position: "sticky",
+  top: 0,
+  zIndex: 1000,
+  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+  width: "100%", // Ensure it spans the entire width
+  boxSizing: "border-box", // Ensure padding doesn't affect the width
+},
+title: {
+  fontSize: "20px",
+  fontWeight: "bold",
+},
+logoutButton: {
+  padding: "10px 20px",
+  backgroundColor: "#01579b",
+  color: "white",
+  border: "none",
+  borderRadius: "5px",
+  cursor: "pointer",
+  transition: "background-color 0.3s",
+},
+resultsHeader: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "1rem",
+},
+resultsCount: {
+  fontSize: "1rem",
+  color: "#0277bd",
+  fontWeight: "bold",
+},
+
 };
 
 export default RestaurantList;
