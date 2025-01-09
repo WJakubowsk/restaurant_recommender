@@ -179,48 +179,93 @@ def home(request):
             print(restaurants.count())
             
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                limited_restaurants = restaurants[:5000]
-                restaurant_data = [
-                    {
-                        "name": restaurant.name,
-                        "cuisine": [c.name for c in restaurant.cuisines.all()],  # Extract related field
-                        "ambience": [a.name for a in restaurant.ambiences.all()],
-                        "rating": restaurant.rating,
-                        "city": restaurant.city,
-                        "price_range": restaurant.price_range,
-                        "delivery": restaurant.delivery,
-                        "good_for_kids": restaurant.good_for_kids,
-                        "good_for_groups": restaurant.good_for_groups,
-                        "take_out": restaurant.take_out,
-                        "reservations": restaurant.reservations,
-                        "outdoor_seating": restaurant.outdoor_seating,
-                        "wheelchair_accessible": restaurant.wheelchair_accessible,
-                        "bike_parking": restaurant.bike_parking,
-                        "credit_cards_accepted": restaurant.credit_cards_accepted,
-                        "happy_hour": restaurant.happy_hour,
-                        "dogs_allowed": restaurant.dogs_allowed,
-                        "sustainable": restaurant.sustainable,
-                        "latitude": restaurant.latitude,
-                        "longitude": restaurant.longitude,
-                         "monday_open": restaurant.monday_open,
-                        "monday_close": restaurant.monday_close,
-                        "tuesday_open": restaurant.tuesday_open,
-                        "tuesday_close": restaurant.tuesday_close,
-                        "wednesday_open": restaurant.wednesday_open,
-                        "wednesday_close": restaurant.wednesday_close,
-                        "thursday_open": restaurant.thursday_open,
-                        "thursday_close": restaurant.thursday_close,
-                        "friday_open": restaurant.friday_open,
-                        "friday_close": restaurant.friday_close,
-                        "saturday_open": restaurant.saturday_open,
-                        "saturday_close": restaurant.saturday_close,
-                        "sunday_open": restaurant.sunday_open,
-                        "sunday_close": restaurant.sunday_close,
-                    }
-                    for restaurant in limited_restaurants
-                ]
-                
-                return JsonResponse({"restaurants": restaurant_data}, safe=False)
+                if restaurants.count()>500:    
+                    limited_restaurants = restaurants[:500]
+                    restaurant_data = [
+                        {
+                            "name": restaurant.name,
+                            "cuisine": [c.name for c in restaurant.cuisines.all()],  # Extract related field
+                            "ambience": [a.name for a in restaurant.ambiences.all()],
+                            "rating": restaurant.rating,
+                            "city": restaurant.city,
+                            "price_range": restaurant.price_range,
+                            "delivery": restaurant.delivery,
+                            "good_for_kids": restaurant.good_for_kids,
+                            "good_for_groups": restaurant.good_for_groups,
+                            "take_out": restaurant.take_out,
+                            "reservations": restaurant.reservations,
+                            "outdoor_seating": restaurant.outdoor_seating,
+                            "wheelchair_accessible": restaurant.wheelchair_accessible,
+                            "bike_parking": restaurant.bike_parking,
+                            "credit_cards_accepted": restaurant.credit_cards_accepted,
+                            "happy_hour": restaurant.happy_hour,
+                            "dogs_allowed": restaurant.dogs_allowed,
+                            "sustainable": restaurant.sustainable,
+                            "latitude": restaurant.latitude,
+                            "longitude": restaurant.longitude,
+                            "monday_open": restaurant.monday_open,
+                            "monday_close": restaurant.monday_close,
+                            "tuesday_open": restaurant.tuesday_open,
+                            "tuesday_close": restaurant.tuesday_close,
+                            "wednesday_open": restaurant.wednesday_open,
+                            "wednesday_close": restaurant.wednesday_close,
+                            "thursday_open": restaurant.thursday_open,
+                            "thursday_close": restaurant.thursday_close,
+                            "friday_open": restaurant.friday_open,
+                            "friday_close": restaurant.friday_close,
+                            "saturday_open": restaurant.saturday_open,
+                            "saturday_close": restaurant.saturday_close,
+                            "sunday_open": restaurant.sunday_open,
+                            "sunday_close": restaurant.sunday_close,
+                        }
+                        for restaurant in limited_restaurants
+                    ]
+                    
+                    return JsonResponse({"restaurants": restaurant_data}, safe=False)
+                else:
+                    
+                    restaurant_data = [
+                        {
+                            "name": restaurant.name,
+                            "cuisine": [c.name for c in restaurant.cuisines.all()],  # Extract related field
+                            "ambience": [a.name for a in restaurant.ambiences.all()],
+                            "rating": restaurant.rating,
+                            "city": restaurant.city,
+                            "price_range": restaurant.price_range,
+                            "delivery": restaurant.delivery,
+                            "good_for_kids": restaurant.good_for_kids,
+                            "good_for_groups": restaurant.good_for_groups,
+                            "take_out": restaurant.take_out,
+                            "reservations": restaurant.reservations,
+                            "outdoor_seating": restaurant.outdoor_seating,
+                            "wheelchair_accessible": restaurant.wheelchair_accessible,
+                            "bike_parking": restaurant.bike_parking,
+                            "credit_cards_accepted": restaurant.credit_cards_accepted,
+                            "happy_hour": restaurant.happy_hour,
+                            "dogs_allowed": restaurant.dogs_allowed,
+                            "sustainable": restaurant.sustainable,
+                            "latitude": restaurant.latitude,
+                            "longitude": restaurant.longitude,
+                            "monday_open": restaurant.monday_open,
+                            "monday_close": restaurant.monday_close,
+                            "tuesday_open": restaurant.tuesday_open,
+                            "tuesday_close": restaurant.tuesday_close,
+                            "wednesday_open": restaurant.wednesday_open,
+                            "wednesday_close": restaurant.wednesday_close,
+                            "thursday_open": restaurant.thursday_open,
+                            "thursday_close": restaurant.thursday_close,
+                            "friday_open": restaurant.friday_open,
+                            "friday_close": restaurant.friday_close,
+                            "saturday_open": restaurant.saturday_open,
+                            "saturday_close": restaurant.saturday_close,
+                            "sunday_open": restaurant.sunday_open,
+                            "sunday_close": restaurant.sunday_close,
+                        }
+                        for restaurant in restaurants
+                    ]
+                    
+                    return JsonResponse({"restaurants": restaurant_data}, safe=False)
+
     else:
         form = RestaurantFilterForm()
 
