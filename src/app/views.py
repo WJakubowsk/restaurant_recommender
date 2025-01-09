@@ -73,7 +73,8 @@ def ambience_list(request):
 def home(request):
     # Default queryset (all restaurants)
     restaurants = Restaurant.objects.all()
-
+    
+    
     # Handle form submission
     if request.method == "GET":
         form = RestaurantFilterForm(request.GET)
@@ -103,19 +104,19 @@ def home(request):
             
 
             # Apply filters
-            if name:
+            if name!="" and name is not None:
                 restaurants = restaurants.filter(name__icontains=name)
-         
-            if cuisine:
+            
+            if cuisine!="" and cuisine is not None:
     # `cuisine` is a Cuisine instance because of ModelChoiceField
                  restaurants = restaurants.filter(cuisines__id=cuisine.id)
-
-            if ambience:
+            
+            if ambience!="" and ambience is not None:
                 # Ambience is received as an ID, filter by it
                 restaurants = restaurants.filter(ambiences__id=ambience.id)
 
-
-            if min_rating is not None:
+           
+            if min_rating!="" and min_rating is not None:
                 restaurants = restaurants.filter(rating__gte=min_rating)
             if open_now:
                 # Determine current day and time
@@ -133,38 +134,39 @@ def home(request):
                         f"{close_field}__gte": current_time,  # Close after or at the current time
                     }
                 )
-            if city:
+            if city!="" and city is not None:
                 restaurants = restaurants.filter(city__icontains=city)
-            if price_range:
+            if price_range!="" and price_range is not None:
                  restaurants = restaurants.filter(price_range=int(price_range))
-
-            if delivery is not None:
+            if delivery!="" and delivery is not None and delivery is not False:
                 restaurants = restaurants.filter(delivery=delivery)
-            if good_for_kids is not None:
+            if good_for_kids!="" and good_for_kids is not None and good_for_kids is not False:
                 restaurants = restaurants.filter(good_for_kids=good_for_kids)
-            if good_for_groups is not None :
+            if good_for_groups!="" and good_for_groups is not None and good_for_groups is not False:
                 restaurants = restaurants.filter(good_for_groups=good_for_groups)
-            if take_out is not None:
+            
+            if take_out!="" and take_out is not None and take_out is not False:
                 restaurants = restaurants.filter(take_out=take_out)
-            if reservations is not None:
+            if reservations!="" and reservations is not None and reservations is not False:
                 restaurants = restaurants.filter(reservations=reservations)
-            if outdoor_seating is not None:
+            if outdoor_seating!="" and outdoor_seating is not None and outdoor_seating is not False:
                 restaurants = restaurants.filter(outdoor_seating=outdoor_seating)
-            if wheelchair_accessible is not None:
+            if wheelchair_accessible!="" and wheelchair_accessible is not None and wheelchair_accessible is not False:
                 restaurants = restaurants.filter(
                     wheelchair_accessible=wheelchair_accessible
                 )
-            if bike_parking is not None:
+            if bike_parking!="" and bike_parking is not None and bike_parking is not False:
                 restaurants = restaurants.filter(bike_parking=bike_parking)
-            if credit_cards_accepted is not None:
+            if credit_cards_accepted!="" and credit_cards_accepted is not None and credit_cards_accepted is not False:
                 restaurants = restaurants.filter(
                     credit_cards_accepted=credit_cards_accepted
                 )
-            if happy_hour is not None:
+            
+            if happy_hour!="" and happy_hour is not None and happy_hour is not False:
                 restaurants = restaurants.filter(happy_hour=happy_hour)
-            if dogs_allowed is not None:
+            if dogs_allowed!="" and dogs_allowed is not None and dogs_allowed is not False:
                 restaurants = restaurants.filter(dogs_allowed=dogs_allowed)
-            if sustainable is not None:
+            if sustainable!="" and sustainable is not None and sustainable is not False:
                 restaurants = restaurants.filter(sustainable=sustainable)
             now = datetime.now()
             current_day = now.strftime("%A").lower()  # e.g., "monday", "tuesday"
@@ -174,8 +176,10 @@ def home(request):
             open_field = f"{current_day}_open"
             close_field = f"{current_day}_close"
             
-
+            print(restaurants.count())
+            
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                limited_restaurants = restaurants[:5000]
                 restaurant_data = [
                     {
                         "name": restaurant.name,
@@ -213,8 +217,9 @@ def home(request):
                         "sunday_open": restaurant.sunday_open,
                         "sunday_close": restaurant.sunday_close,
                     }
-                    for restaurant in restaurants
+                    for restaurant in limited_restaurants
                 ]
+                
                 return JsonResponse({"restaurants": restaurant_data}, safe=False)
     else:
         form = RestaurantFilterForm()

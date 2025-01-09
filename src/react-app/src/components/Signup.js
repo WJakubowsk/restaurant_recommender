@@ -237,6 +237,21 @@ const Signup = () => {
             Sign Up
           </button>
         </form>
+        <p
+          style={{
+            marginTop: "15px",
+            textAlign: "center",
+            fontSize: "14px",
+          }}
+        >
+          Do you have an account?{" "}
+          <span
+            style={{ color: "#0277bd", cursor: "pointer", fontWeight: "bold" }}
+            onClick={() => navigate("/login")}
+          >
+            Log in here
+          </span>
+        </p>
       </div>
     </div>
   );
