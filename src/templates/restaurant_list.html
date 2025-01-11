@@ -113,6 +113,17 @@
         if (bounds.isValid()) {
             map.fitBounds(bounds);
         }
+
+        // // Redirect to review page when clicking on a marker
+        // restaurants.forEach(restaurant => {
+        // if (restaurant.latitude && restaurant.longitude) {
+        //     const marker = L.marker([restaurant.latitude, restaurant.longitude]).addTo(map);
+        //     marker.on('click', () => {
+        //         // Redirect to add_review with the restaurant's business_id
+        //         window.location.href = `/add_review/${restaurant.business_id}/`;
+        //         });
+        //     }
+        // });
     </script>
 </body>
 </html>

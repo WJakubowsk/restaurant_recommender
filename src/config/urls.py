@@ -19,10 +19,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from authentication import views as auth_views_custom
+from app import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", include("app.urls")),
+    path("", include("app.urls"), name="home"),
     path(
         "login/",
         auth_views.LoginView.as_view(template_name="authentication/login.html"),
@@ -30,4 +31,5 @@ urlpatterns = [
     ),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("signup/", auth_views_custom.signup, name="signup"),
+    # path("add_review/<str:business_id>/", views.add_review, name="add_review"),
 ]

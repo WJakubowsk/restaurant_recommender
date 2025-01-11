@@ -1,5 +1,11 @@
 from django import forms
-from .models import Restaurant, Cuisine, Ambience
+from .models import Restaurant, Cuisine, Ambience, Review
+
+
+# class ReviewForm(forms.ModelForm):
+#     class Meta:
+#         model = Review
+#         fields = ["rating", "text"]
 
 
 class RestaurantFilterForm(forms.Form):
