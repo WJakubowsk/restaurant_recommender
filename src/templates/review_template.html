@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Review</title>
+</head>
+<body>
+    <h1>Add a Review</h1>
+
+    {% if messages %}
+    <div>
+        {% for message in messages %}
+        <div class="alert  alert-{{ message.tags }}" style="color: red;">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <label for="restaurant_name">Restaurant Name:</label>
+        <input
+            type="text"
+            id="restaurant_name"
+            name="restaurant_name"
+            placeholder="Type a restaurant's name"
+            autocomplete="off"
+        >
+        <ul id="suggestions" style="border: 1px solid #ccc; display: none; list-style: none; padding: 5px;"></ul>
+    
+        <label for="rating">Rating:</label>
+        <input type="number" name="rating" id="rating" min="1" max="5" step="1" required>
+    
+        <label for="text">Review:</label>
+        <textarea name="text" id="text" required></textarea>
+    
+        <button type="submit">Submit Review</button>
+    </form>
+    
+    <script>
+        const input = document.getElementById("restaurant_name");
+        const suggestions = document.getElementById("suggestions");
+    
+        input.addEventListener("input", function () {
+            const query = input.value;
+            if (query.length < 2) {
+                suggestions.style.display = "none";
+                return;
+            }
+    
+            fetch(`/autocomplete/?term=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    suggestions.innerHTML = "";
+                    if (data.length > 0) {
+                        suggestions.style.display = "block";
+                        data.forEach(name => {
+                            const li = document.createElement("li");
+                            li.textContent = name;
+                            li.style.cursor = "pointer";
+                            li.addEventListener("click", function () {
+                                input.value = name;
+                                suggestions.style.display = "none";
+                            });
+                            suggestions.appendChild(li);
+                        });
+                    } else {
+                        suggestions.style.display = "none";
+                    }
+                });
+        });
+    
+        document.addEventListener("click", function (e) {
+            if (e.target !== input && e.target.parentElement !== suggestions) {
+                suggestions.style.display = "none";
+            }
+        });
+    </script>
+
+    <a href="{% url 'home' %}">Back to discovering restaurants</a>
+</body>
+</html>
