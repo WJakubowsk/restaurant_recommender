@@ -1,19 +1,25 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from .models import Restaurant, Cuisine, Review, User as CustomUser
-from .forms import RestaurantFilterForm  # , ReviewForm
-from django.contrib.auth.decorators import login_required
-from datetime import datetime
-from django.http import JsonResponse
-from django.forms.models import model_to_dict
-from rest_framework.decorators import api_view
+from datetime import date, datetime
+
+from django.contrib import messages
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.models import User
-from rest_framework.authtoken.models import Token
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User as AuthUser
+from django.forms.models import model_to_dict
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, get_object_or_404, redirect
+from django.conf import settings
+from django.apps import apps
+
 from rest_framework import status
-from datetime import date
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .forms import RestaurantFilterForm  # , ReviewForm
+from .models import Restaurant, Cuisine, Review, Ambience, User as CustomUser
+
+import torch
 
 
 @api_view(["POST"])
@@ -25,20 +31,39 @@ def signup(request):
     email = request.data.get("email")
     password = request.data.get("password")
 
-    if User.objects.filter(username=username).exists():
+    if AuthUser.objects.filter(username=username).exists():
         return Response(
             {"error": "Username already exists"}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    if User.objects.filter(email=email).exists():
+    if AuthUser.objects.filter(email=email).exists():
         return Response(
             {"error": "Email already exists"}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    user = User.objects.create_user(username=username, email=email, password=password)
-    token, _ = Token.objects.get_or_create(user=user)
+    # Create the Django authentication user
+    auth_user = AuthUser.objects.create_user(
+        username=username, email=email, password=password
+    )
+
+    # Create the corresponding custom User model entry
+    custom_user = CustomUser.objects.create(
+        user_id=auth_user.id,  # Link to the AuthUser id
+        name=username,
+        account_since=date.today(),
+        average_rating=0.0,
+    )
+
+    # Generate a token for the newly created user
+    token, _ = Token.objects.get_or_create(user=auth_user)
+
     return Response(
-        {"token": token.key, "username": user.username}, status=status.HTTP_201_CREATED
+        {
+            "token": token.key,
+            "username": auth_user.username,
+            "user_id": custom_user.user_id,
+        },
+        status=status.HTTP_201_CREATED,
     )
 
 
@@ -72,9 +97,6 @@ class HomeAPIView(APIView):
 def cuisine_list(request):
     cuisines = Cuisine.objects.all().values("id", "name")  # Return id and name
     return JsonResponse(list(cuisines), safe=False)
-
-
-from .models import Ambience
 
 
 def ambience_list(request):
@@ -318,52 +340,84 @@ def home(request):
     else:
         form = RestaurantFilterForm()
 
-    print(form.errors)
-    # Render the template with the filtered restaurants and the form
     return render(
         request, "restaurant_list.html", {"form": form, "restaurants": restaurants}
     )
 
 
 # @login_required
-# def add_review(request, business_id):
-#     # Fetch the restaurant object using the provided business_id and get user if not exists
-#     restaurant = get_object_or_404(Restaurant, business_id=business_id)
-#     user = CustomUser.objects.get(user_id=request.user.username)
+def add_review(request):
+    if request.method == "POST":
+        restaurant = Restaurant.objects.get(
+            name__iexact=request.POST.get("restaurant_name")
+        )
+        rating = request.POST.get("rating")
+        text = request.POST.get("text")
 
-#     # Create a new user if not exists
-#     if not CustomUser.objects.filter(user_id=request.user.username).exists():
-#         user = CustomUser(
-#             user_id=request.user.username,
-#             name=request.user.username,
-#             average_rating=0,
-#             review_count=0,
-#             account_since=date.today(),
-#         )
-#         user.save()
+        # Check if the review is fake
+        if filter_review(text):
+            # If the review is considered AI-generated, prompt the user to change it
+            messages.warning(
+                request,
+                "Your review appears to be AI-generated. Please revise it and try again.",
+            )
+        else:
+            messages.success(
+                request,
+                "Thank you for your review! It has been submitted successfully.",
+            )
+            # Create a new review
+            review = Review(
+                review_id=Review.objects.count() + 1,
+                user_id=CustomUser.objects.first(),
+                business_id=restaurant,
+                rating=rating,
+                text=text,
+                date=date.today(),  # Automatically set today's date
+            )
+            review.save()
 
-#     if request.method == "POST":
-#         form = ReviewForm(request.POST)
-#         if form.is_valid():
-#             # Create a new review instance
-#             review = Review(
-#                 review_id=Review.objects.count() + 1,
-#                 user_id=user,
-#                 business_id=restaurant,
-#                 rating=form.cleaned_data["rating"],
-#                 text=form.cleaned_data["text"],
-#                 date=date.today(),  # Automatically set today's date
-#             )
-#             review.save()
+            # # Update user parameters if it's not an AnynomousUser
+            if request.user.is_authenticated:
+                request.user.review_count += 1
+                request.user.average_rating = (
+                    request.user.average_rating * (request.user.review_count - 1)
+                    + review.rating
+                ) / request.user.review_count
+                request.user.save()
 
-#             # Update the review count and average rating of the user
-#             user.review_count += 1
-#             user.average_rating = (
-#                 user.average_rating * (user.review_count - 1) + review.rating
-#             ) / user.review_count
-#             user.save()
-#             return redirect("home")  # Redirect to the restaurant list view
-#     else:
-#         form = ReviewForm()
+            return redirect("home")  # Redirect to the restaurant list after submission
 
-#     return render(request, "add_review.html", {"form": form, "restaurant": restaurant})
+    return render(request, "add_review.html")
+
+
+def autocomplete_restaurants(request):
+    if "term" in request.GET:
+        qs = Restaurant.objects.filter(name__icontains=request.GET.get("term"))[
+            :10
+        ]  # Limit results
+        names = list(qs.values_list("name", flat=True))
+        return JsonResponse(names, safe=False)
+    return JsonResponse([], safe=False)
+
+
+def filter_review(review_text: str) -> str:
+    # Access the pre-loaded model and tokenizer from the AppConfig
+    filter_config = apps.get_app_config("app")
+    model = filter_config.model
+    tokenizer = filter_config.tokenizer
+    device = filter_config.device
+
+    # Tokenize the input review
+    inputs = tokenizer(review_text, return_tensors="pt", padding=True, truncation=True)
+
+    # Move tensors to the correct device (GPU/CPU)
+    inputs = {key: value.to(device) for key, value in inputs.items()}
+
+    # Make prediction
+    with torch.no_grad():
+        outputs = model(**inputs)
+        probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
+        prediction = torch.argmax(probs, dim=-1).item()
+
+    return True if prediction == 1 else False

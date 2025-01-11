@@ -31,5 +31,8 @@ urlpatterns = [
     ),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("signup/", auth_views_custom.signup, name="signup"),
-    # path("add_review/<str:business_id>/", views.add_review, name="add_review"),
+    path("add_review/", views.add_review, name="add_review"),
+    path(
+        "autocomplete/", views.autocomplete_restaurants, name="autocomplete_restaurants"
+    ),
 ]
