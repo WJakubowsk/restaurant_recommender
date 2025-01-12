@@ -1,5 +1,16 @@
 from datetime import date, datetime
 
+from django.shortcuts import render
+from django.http import HttpResponse
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .models import Restaurant, Review
+from .forms import RestaurantFilterForm
+from django.contrib.auth.decorators import login_required
+from datetime import datetime
+from django.http import JsonResponse
+from django.forms.models import model_to_dict
+from rest_framework.decorators import api_view
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User as AuthUser
 from django.views.decorators.csrf import csrf_exempt
@@ -18,6 +29,9 @@ from .models import Restaurant, Cuisine, Review, Ambience, User as CustomUser
 
 import json
 import torch
+
+
+from .recommender import Recommender
 
 
 @api_view(["POST"])
@@ -239,6 +253,19 @@ def home(request):
             open_field = f"{current_day}_open"
             close_field = f"{current_day}_close"
 
+            filters_applied = any(
+                value for key, value in request.GET.items() if value.strip()
+            )
+            if filters_applied:
+                print("Recommender engine inference...")
+                recommender = Recommender(
+                    businesses=restaurants, reviews=Review.objects.all()
+                )
+                recommender.fit(
+                    user_id=request.user.id
+                )  # Fit with the current user's data
+                restaurants = recommender.predict(businesses=restaurants)
+
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 if restaurants.count() > 500:
                     limited_restaurants = restaurants[:500]
@@ -286,7 +313,6 @@ def home(request):
 
                     return JsonResponse({"restaurants": restaurant_data}, safe=False)
                 else:
-
                     restaurant_data = [
                         {
                             "name": restaurant.name,
@@ -329,6 +355,9 @@ def home(request):
                         for restaurant in restaurants
                     ]
 
+                    # return render(
+                    #         request, "restaurant_list.html", {"form": form, "restaurants": top_recommendations}
+                    #     )
                     return JsonResponse({"restaurants": restaurant_data}, safe=False)
 
     else:
@@ -346,9 +375,6 @@ def add_review(request):
         restaurant_name = data.get("restaurant_name", "").strip()
         rating = data.get("rating")
         text = data.get("text")
-
-        print(f"Received restaurant_name: {restaurant_name}")  # Debugging
-        print(f"Received rating: {rating}, text: {text}")  # Debugging
 
         restaurant = Restaurant.objects.filter(name__iexact=restaurant_name).first()
         if not restaurant:
