@@ -231,12 +231,6 @@ def home(request):
                     
                     return JsonResponse({"restaurants": restaurant_data}, safe=False)
                 else:
-                    print("Calling recommender function")    
-                    recommender = Recommender(businesses=restaurants, reviews=Review.objects.all())
-                    recommender.fit(user_id=request.user.id)  # Fit with the current user's data
-                    top_recommendations = recommender.predict(businesses=restaurants)
-                    print("Top recommendations",top_recommendations)
-                    #return JsonResponse({"restaurants": top_recommendations}, safe=False)
                     
                     restaurant_data = [
                         {
