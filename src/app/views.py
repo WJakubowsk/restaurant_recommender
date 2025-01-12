@@ -347,6 +347,7 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 # @login_required
 @csrf_exempt
+@csrf_exempt
 def add_review(request):
     if request.method == "POST":
         data = json.loads(request.body)
@@ -357,49 +358,47 @@ def add_review(request):
         print(f"Received restaurant_name: {restaurant_name}")  # Debugging
         print(f"Received rating: {rating}, text: {text}")      # Debugging
 
-        #print(request.POST.get("restaurant_name"))
-        restaurant = Restaurant.objects.filter(
-            name__iexact=restaurant_name
-        ).first()
-        
-        rating = rating
-        text = text
-
-        # Check if the review is fake
-        if filter_review(text):
-            # If the review is considered AI-generated, prompt the user to change it
-            messages.warning(
-                request,
-                "Your review appears to be AI-generated. Please revise it and try again.",
+        restaurant = Restaurant.objects.filter(name__iexact=restaurant_name).first()
+        if not restaurant:
+            return JsonResponse(
+                {"error": f"Restaurant '{restaurant_name}' does not exist."},
+                status=400
             )
-        else:
-            messages.success(
-                request,
-                "Thank you for your review! It has been submitted successfully.",
+
+        # Check if the review is AI-generated
+        is_ai_generated = filter_review(text)
+        #is_ai_generated=False
+        if is_ai_generated:
+            return JsonResponse(
+                {"message": "Your review appears to be AI-generated. Please revise it and try again."},
+                status=400
             )
-            # Create a new review
-            review = Review(
-                review_id=Review.objects.count() + 1,
-                user_id=CustomUser.objects.first(),
-                business_id=restaurant,
-                rating=rating,
-                text=text,
-                date=date.today(),  # Automatically set today's date
-            )
-            review.save()
 
-            # # Update user parameters if it's not an AnynomousUser
-            if request.user.is_authenticated:
-                request.user.review_count += 1
-                request.user.average_rating = (
-                    request.user.average_rating * (request.user.review_count - 1)
-                    + review.rating
-                ) / request.user.review_count
-                request.user.save()
+        # Create the review if not AI-generated
+        review = Review.objects.create(
+            review_id=Review.objects.count() + 1,
+            user_id=CustomUser.objects.first(),  # Replace with authenticated user logic
+            business_id=restaurant,
+            rating=rating,
+            text=text,
+            date=date.today(),
+        )
 
-            return redirect("home")  # Redirect to the restaurant list after submission
+        # Update user statistics if authenticated
+        if request.user.is_authenticated:
+            request.user.review_count += 1
+            request.user.average_rating = (
+                (request.user.average_rating * (request.user.review_count - 1)) + rating
+            ) / request.user.review_count
+            request.user.save()
 
-    return render(request, "add_review.html")
+        return JsonResponse(
+            {"message": "Thank you for your review! It has been submitted successfully."},
+            status=201
+        )
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
 
 
 def autocomplete_restaurants(request):

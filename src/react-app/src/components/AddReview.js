@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 const AddReview = () => {
-
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [restaurants, setRestaurants] = useState([]);
@@ -12,15 +10,14 @@ const AddReview = () => {
   const [reviewText, setReviewText] = useState("");
   const [rating, setRating] = useState(1);
   const [successMessage, setSuccessMessage] = useState("");
+  const [aiWarning, setAIWarning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showRestaurantList, setShowRestaurantList] = useState(true);
 
-  // Fetch all restaurants on component mount
   useEffect(() => {
     fetchRestaurants();
   }, []);
 
-  // Fetch restaurants from the backend
   const fetchRestaurants = async () => {
     try {
       setLoading(true);
@@ -47,7 +44,6 @@ const AddReview = () => {
     }
   };
 
-  // Handle search input change
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (query.length > 0) {
@@ -58,68 +54,68 @@ const AddReview = () => {
     } else {
       setFilteredRestaurants([]);
     }
-    setShowRestaurantList(true); // Show the list when typing
+    setShowRestaurantList(true);
   };
 
-  // Handle restaurant selection from the dropdown
+  const handleSearchFocus = () => {
+    setSuccessMessage(""); // Clear success message when search input is focused
+    setAIWarning(false); // Clear AI warning when search input is focused
+  };
+
   const handleRestaurantClick = (restaurant) => {
     setSelectedRestaurant(restaurant);
     setSearchQuery(restaurant.name);
     setFilteredRestaurants([]);
-    setShowRestaurantList(false); // Hide the list after selecting
+    setShowRestaurantList(false);
+    setSuccessMessage("");
+    setAIWarning(false);
   };
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
-  
+
     const payload = {
       restaurant_name: selectedRestaurant.name.trim(),
       rating: rating,
       text: reviewText,
     };
-  
-    console.log("Sending payload:", payload); // Debugging
-  
-    // Reset form state immediately
-    setSuccessMessage("Submitting your review...");
-    setReviewText("");
-    setRating(1);
-    setSelectedRestaurant(null);
-    setSearchQuery("");
-    setShowRestaurantList(false);
-  
+
+    console.log("Sending payload:", payload);
+
+    setSuccessMessage("");
+    setAIWarning(false);
+
     try {
       const response = await fetch(`http://127.0.0.1:8000/add_review/`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json", // Ensure the correct content type
+          "Content-Type": "application/json",
           "X-CSRFToken": getCSRFToken(),
           Authorization: `Token ${token}`,
         },
         body: JSON.stringify(payload),
       });
-  
+
+      const data = await response.json();
+
       if (response.ok) {
         setSuccessMessage("Review submitted successfully!");
-  
-        // Clear the success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage("");
-        }, 500);
+        // Clear form, search bar, and state
+        setSelectedRestaurant(null);
+        setReviewText("");
+        setRating(1);
+        setSearchQuery("");
+      } else if (data.message && data.message.includes("AI-generated")) {
+        setAIWarning(true);
       } else {
-        const data = await response.json();
-        console.error("Error response:", data);
-        alert(data.error || "Failed to submit review.");
-        setSuccessMessage(""); // Clear any pending message
+        setSuccessMessage(data.message || "Failed to submit review.");
       }
     } catch (error) {
       console.error("Error submitting review:", error);
-      alert("An error occurred while submitting your review.");
-      setSuccessMessage(""); // Clear any pending message
+      setSuccessMessage("An error occurred while submitting your review.");
     }
   };
-  
 
   const getCSRFToken = () => {
     const csrfCookie = document.cookie
@@ -172,6 +168,7 @@ const AddReview = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
+            onFocus={handleSearchFocus}
             placeholder="Enter restaurant name"
             style={{
               width: "100%",
@@ -181,9 +178,20 @@ const AddReview = () => {
               border: "1px solid #81d4fa",
               boxSizing: "border-box",
             }}
-            onFocus={() => setShowRestaurantList(true)} // Show the list when focusing
           />
         </div>
+        {successMessage && (
+          <p
+            style={{
+              color: successMessage.includes("successfully") ? "green" : "red",
+              textAlign: "center", // Center align the success message
+              margin: "15px 0",
+              fontSize: "14px",
+            }}
+          >
+            {successMessage}
+          </p>
+        )}
         {loading && <p>Loading restaurants...</p>}
         {showRestaurantList && filteredRestaurants.length > 0 && (
           <ul
@@ -216,7 +224,7 @@ const AddReview = () => {
             ))}
           </ul>
         )}
-        {selectedRestaurant && (
+        {selectedRestaurant && !successMessage && (
           <form onSubmit={handleSubmitReview}>
             <h2 style={{ fontSize: "18px", marginBottom: "15px", color: "#0277bd" }}>
               Review {selectedRestaurant.name}
@@ -237,7 +245,7 @@ const AddReview = () => {
                 onChange={(e) => setRating(Number(e.target.value))}
                 min="1"
                 max="5"
-                step="0.5"
+                step="1" // Changed to 1
                 required
                 style={{
                   width: "100%",
@@ -273,7 +281,20 @@ const AddReview = () => {
                   boxSizing: "border-box",
                   marginBottom: "15px",
                 }}
+                onFocus={() => setAIWarning(false)}
               ></textarea>
+              {aiWarning && (
+                <p
+                  style={{
+                    textAlign: "center",
+                    color: "red",
+                    fontSize: "14px",
+                    marginTop: "5px",
+                  }}
+                >
+                  Your review appears to be AI-generated. Please revise it and try again.
+                </p>
+              )}
             </div>
             <button
               type="submit"
@@ -295,18 +316,6 @@ const AddReview = () => {
               Submit Review
             </button>
           </form>
-        )}
-        {successMessage && (
-          <p
-            style={{
-              color: "green",
-              marginTop: "15px",
-              textAlign: "center",
-              fontSize: "14px",
-            }}
-          >
-            {successMessage}
-          </p>
         )}
         <button
           onClick={handleBackToList}
