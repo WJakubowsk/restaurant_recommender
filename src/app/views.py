@@ -343,16 +343,27 @@ def home(request):
     return render(
         request, "restaurant_list.html", {"form": form, "restaurants": restaurants}
     )
-
-
+import json
+from django.views.decorators.csrf import csrf_exempt
 # @login_required
+@csrf_exempt
 def add_review(request):
     if request.method == "POST":
-        restaurant = Restaurant.objects.get(
-            name__iexact=request.POST.get("restaurant_name")
-        )
-        rating = request.POST.get("rating")
-        text = request.POST.get("text")
+        data = json.loads(request.body)
+        restaurant_name = data.get("restaurant_name", "").strip()
+        rating = data.get("rating")
+        text = data.get("text")
+
+        print(f"Received restaurant_name: {restaurant_name}")  # Debugging
+        print(f"Received rating: {rating}, text: {text}")      # Debugging
+
+        #print(request.POST.get("restaurant_name"))
+        restaurant = Restaurant.objects.filter(
+            name__iexact=restaurant_name
+        ).first()
+        
+        rating = rating
+        text = text
 
         # Check if the review is fake
         if filter_review(text):
