@@ -67,6 +67,10 @@ def filter_reviews(df: pd.DataFrame) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
+    """
+    This is a script to perform review filtering offline on YELP dataset.
+    For online filtering, the model is created in app/apps.py and used in app/views.py.
+    """
     # Load data
     df = pd.read_csv("../../data/yelp_academic_dataset_review_1MLN.csv")
     # Filter reviews
