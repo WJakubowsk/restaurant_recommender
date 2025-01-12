@@ -20,7 +20,7 @@ python manage.py migrate # for setting up infrastructure
 python manage.py runserver # for exposing back-end
 ```
 * Optionally, you can also load the data about restaurants, using the custom commands based on scripts in `/src/management/commands`. These scripts will populate the database with Restaurant, Reviews and User data from CSV files. To do this:
-    - Download the CSV files from [here](TODO) and put them in `/data` folder
+    - Download the CSV files from [here](https://we.tl/t-vgmxWEGAsc) and put them in `/data` folder
     - Execute the following commands:
     ```
     python manage.py load_users --csv-file ../data/yelp_academic_dataset_user_sample.csv
