@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Restaurant
+from .models import Restaurant, Review
 from .forms import RestaurantFilterForm
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
@@ -14,6 +14,8 @@ from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status
+from .recommender import Recommender
+
 @api_view(['POST'])
 def signup(request):
     """
@@ -108,7 +110,7 @@ def home(request):
                 restaurants = restaurants.filter(name__icontains=name)
             
             if cuisine!="" and cuisine is not None:
-    # `cuisine` is a Cuisine instance because of ModelChoiceField
+    # cuisine is a Cuisine instance because of ModelChoiceField
                  restaurants = restaurants.filter(cuisines__id=cuisine.id)
             
             if ambience!="" and ambience is not None:
@@ -179,8 +181,14 @@ def home(request):
             print(restaurants.count())
             
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                if restaurants.count()>500:    
-                    limited_restaurants = restaurants[:500]
+                print("Calling recommender function")    
+                recommender = Recommender(businesses=restaurants, reviews=Review.objects.all())
+                recommender.fit(user_id=request.user.id)  # Fit with the current user's data
+                top_recommendations = recommender.predict(businesses=restaurants)
+                print("Top recommendations",top_recommendations)
+
+                if top_recommendations.count()>500:    
+                    limited_restaurants = top_recommendations[:500]
                     restaurant_data = [
                         {
                             "name": restaurant.name,
@@ -223,6 +231,12 @@ def home(request):
                     
                     return JsonResponse({"restaurants": restaurant_data}, safe=False)
                 else:
+                    print("Calling recommender function")    
+                    recommender = Recommender(businesses=restaurants, reviews=Review.objects.all())
+                    recommender.fit(user_id=request.user.id)  # Fit with the current user's data
+                    top_recommendations = recommender.predict(businesses=restaurants)
+                    print("Top recommendations",top_recommendations)
+                    #return JsonResponse({"restaurants": top_recommendations}, safe=False)
                     
                     restaurant_data = [
                         {
@@ -261,10 +275,14 @@ def home(request):
                             "sunday_open": restaurant.sunday_open,
                             "sunday_close": restaurant.sunday_close,
                         }
-                        for restaurant in restaurants
+                        for restaurant in top_recommendations
                     ]
                     
+                    # return render(
+                    #         request, "restaurant_list.html", {"form": form, "restaurants": top_recommendations}
+                    #     )
                     return JsonResponse({"restaurants": restaurant_data}, safe=False)
+
 
     else:
         form = RestaurantFilterForm()
