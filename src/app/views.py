@@ -388,11 +388,11 @@ def add_review(request):
                 },
                 status=400,
             )
-
+        user = CustomUser.objects.filter(user_id=request.user.id).first()
         # Create the review if not AI-generated
         review = Review.objects.create(
             review_id=Review.objects.count() + 1,
-            user_id=CustomUser.objects.first(),  # Replace with authenticated user logic
+            user_id=user,  # Replace with authenticated user logic
             business_id=restaurant,
             rating=rating,
             text=text,
@@ -401,11 +401,11 @@ def add_review(request):
 
         # Update user statistics if authenticated
         if request.user.is_authenticated:
-            request.user.review_count += 1
-            request.user.average_rating = (
-                (request.user.average_rating * (request.user.review_count - 1)) + rating
-            ) / request.user.review_count
-            request.user.save()
+            user.review_count += 1
+            user.average_rating = (
+                (user.average_rating * (user.review_count - 1)) + rating
+            ) / user.review_count
+            user.save()
 
         return JsonResponse(
             {
