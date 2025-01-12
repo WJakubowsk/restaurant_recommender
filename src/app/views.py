@@ -33,6 +33,7 @@ import torch
 
 from .recommender import Recommender
 
+
 @api_view(["POST"])
 def signup(request):
     """
@@ -252,15 +253,22 @@ def home(request):
             open_field = f"{current_day}_open"
             close_field = f"{current_day}_close"
 
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                print("Calling recommender function")    
-                recommender = Recommender(businesses=restaurants, reviews=Review.objects.all())
-                recommender.fit(user_id=request.user.id)  # Fit with the current user's data
-                top_recommendations = recommender.predict(businesses=restaurants)
-                print("Top recommendations",top_recommendations)
+            filters_applied = any(
+                value for key, value in request.GET.items() if value.strip()
+            )
+            if filters_applied:
+                print("Recommender engine inference...")
+                recommender = Recommender(
+                    businesses=restaurants, reviews=Review.objects.all()
+                )
+                recommender.fit(
+                    user_id=request.user.id
+                )  # Fit with the current user's data
+                restaurants = recommender.predict(businesses=restaurants)
 
-                if top_recommendations.count()>500:    
-                    limited_restaurants = top_recommendations[:500]
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                if restaurants.count() > 500:
+                    limited_restaurants = restaurants[:500]
                     restaurant_data = [
                         {
                             "name": restaurant.name,
@@ -305,7 +313,6 @@ def home(request):
 
                     return JsonResponse({"restaurants": restaurant_data}, safe=False)
                 else:
-
                     restaurant_data = [
                         {
                             "name": restaurant.name,
@@ -345,14 +352,13 @@ def home(request):
                             "sunday_open": restaurant.sunday_open,
                             "sunday_close": restaurant.sunday_close,
                         }
-                        for restaurant in top_recommendations
+                        for restaurant in restaurants
                     ]
-                    
+
                     # return render(
                     #         request, "restaurant_list.html", {"form": form, "restaurants": top_recommendations}
                     #     )
                     return JsonResponse({"restaurants": restaurant_data}, safe=False)
-
 
     else:
         form = RestaurantFilterForm()
@@ -370,9 +376,6 @@ def add_review(request):
         rating = data.get("rating")
         text = data.get("text")
 
-        print(f"Received restaurant_name: {restaurant_name}")  # Debugging
-        print(f"Received rating: {rating}, text: {text}")  # Debugging
-
         restaurant = Restaurant.objects.filter(name__iexact=restaurant_name).first()
         if not restaurant:
             return JsonResponse(
@@ -388,11 +391,11 @@ def add_review(request):
                 },
                 status=400,
             )
-        user = CustomUser.objects.filter(user_id=request.user.id).first()
+
         # Create the review if not AI-generated
         review = Review.objects.create(
             review_id=Review.objects.count() + 1,
-            user_id=user,  # Replace with authenticated user logic
+            user_id=CustomUser.objects.first(),  # Replace with authenticated user logic
             business_id=restaurant,
             rating=rating,
             text=text,
@@ -401,11 +404,11 @@ def add_review(request):
 
         # Update user statistics if authenticated
         if request.user.is_authenticated:
-            user.review_count += 1
-            user.average_rating = (
-                (user.average_rating * (user.review_count - 1)) + rating
-            ) / user.review_count
-            user.save()
+            request.user.review_count += 1
+            request.user.average_rating = (
+                (request.user.average_rating * (request.user.review_count - 1)) + rating
+            ) / request.user.review_count
+            request.user.save()
 
         return JsonResponse(
             {
