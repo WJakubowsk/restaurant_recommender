@@ -6,6 +6,10 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 
 class ReviewFilterConfig(AppConfig):
+    """
+    AppConfig class. Contains model for review filtering to be loaded only once.
+    """
+
     default_auto_field = "django.db.models.BigAutoField"
     name = "app"
     verbose_name = "Review Filter"

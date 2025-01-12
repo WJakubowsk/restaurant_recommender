@@ -1,13 +1,10 @@
 from datetime import date, datetime
 
-from django.contrib import messages
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User as AuthUser
-from django.forms.models import model_to_dict
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, get_object_or_404, redirect
-from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.shortcuts import render
 from django.apps import apps
 
 from rest_framework import status
@@ -16,9 +13,10 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .forms import RestaurantFilterForm  # , ReviewForm
+from .forms import RestaurantFilterForm
 from .models import Restaurant, Cuisine, Review, Ambience, User as CustomUser
 
+import json
 import torch
 
 
@@ -104,9 +102,7 @@ def ambience_list(request):
     return JsonResponse(list(ambiences), safe=False)
 
 
-# @login_required
 def home(request):
-    # Default queryset (all restaurants)
     restaurants = Restaurant.objects.all()
 
     # Handle form submission
@@ -243,8 +239,6 @@ def home(request):
             open_field = f"{current_day}_open"
             close_field = f"{current_day}_close"
 
-            # print(restaurants.count())
-
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 if restaurants.count() > 500:
                     limited_restaurants = restaurants[:500]
@@ -343,10 +337,8 @@ def home(request):
     return render(
         request, "restaurant_list.html", {"form": form, "restaurants": restaurants}
     )
-import json
-from django.views.decorators.csrf import csrf_exempt
-# @login_required
-@csrf_exempt
+
+
 @csrf_exempt
 def add_review(request):
     if request.method == "POST":
@@ -356,22 +348,22 @@ def add_review(request):
         text = data.get("text")
 
         print(f"Received restaurant_name: {restaurant_name}")  # Debugging
-        print(f"Received rating: {rating}, text: {text}")      # Debugging
+        print(f"Received rating: {rating}, text: {text}")  # Debugging
 
         restaurant = Restaurant.objects.filter(name__iexact=restaurant_name).first()
         if not restaurant:
             return JsonResponse(
-                {"error": f"Restaurant '{restaurant_name}' does not exist."},
-                status=400
+                {"error": f"Restaurant '{restaurant_name}' does not exist."}, status=400
             )
 
         # Check if the review is AI-generated
         is_ai_generated = filter_review(text)
-        #is_ai_generated=False
         if is_ai_generated:
             return JsonResponse(
-                {"message": "Your review appears to be AI-generated. Please revise it and try again."},
-                status=400
+                {
+                    "message": "Your review appears to be AI-generated. Please revise it and try again."
+                },
+                status=400,
             )
 
         # Create the review if not AI-generated
@@ -393,19 +385,18 @@ def add_review(request):
             request.user.save()
 
         return JsonResponse(
-            {"message": "Thank you for your review! It has been submitted successfully."},
-            status=201
+            {
+                "message": "Thank you for your review! It has been submitted successfully."
+            },
+            status=201,
         )
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
-
 def autocomplete_restaurants(request):
     if "term" in request.GET:
-        qs = Restaurant.objects.filter(name__icontains=request.GET.get("term"))[
-            :10
-        ]  # Limit results
+        qs = Restaurant.objects.filter(name__icontains=request.GET.get("term"))[:10]
         names = list(qs.values_list("name", flat=True))
         return JsonResponse(names, safe=False)
     return JsonResponse([], safe=False)
@@ -418,13 +409,9 @@ def filter_review(review_text: str) -> str:
     tokenizer = filter_config.tokenizer
     device = filter_config.device
 
-    # Tokenize the input review
     inputs = tokenizer(review_text, return_tensors="pt", padding=True, truncation=True)
-
-    # Move tensors to the correct device (GPU/CPU)
     inputs = {key: value.to(device) for key, value in inputs.items()}
 
-    # Make prediction
     with torch.no_grad():
         outputs = model(**inputs)
         probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
