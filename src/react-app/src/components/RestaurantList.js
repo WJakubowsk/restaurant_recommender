@@ -450,6 +450,13 @@ const RestaurantList = () => {
         >
           {showMap ? "Hide Map" : "Show Map"}
         </button>
+        {/* Add Review Button */}
+          <button
+            onClick={() => navigate("/add-review")}
+            style={styles.toggleButton}
+          >
+            Add Review
+          </button>
       </div>
 
       {filtersApplied && (

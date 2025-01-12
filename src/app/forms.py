@@ -1,5 +1,5 @@
 from django import forms
-from .models import Restaurant, Cuisine, Ambience
+from .models import Cuisine, Ambience
 
 
 class RestaurantFilterForm(forms.Form):
